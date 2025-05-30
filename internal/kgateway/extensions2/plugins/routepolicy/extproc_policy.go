@@ -25,13 +25,19 @@ func toEnvoyExtProc(
 	gwExtName := types.NamespacedName{Name: spec.ExtensionRef.Name, Namespace: trafficPolicy.GetNamespace()}
 	gatewayExtension := krt.FetchOne(krtctx, gatewayExtensions, krt.FilterObjectName(gwExtName))
 	if gatewayExtension == nil {
-		return nil, fmt.Errorf("extauth extension not found")
+		return nil, fmt.Errorf("extproc extension not found")
 	}
 	if gatewayExtension.err != nil {
 		return nil, gatewayExtension.err
 	}
 	if gatewayExtension.extProc == nil {
-		return nil, pluginutils.ErrInvalidExtensionType(v1alpha1.GatewayExtensionTypeExtAuth, gatewayExtension.extType)
+		return nil, pluginutils.ErrInvalidExtensionType(v1alpha1.GatewayExtensionTypeExtProc, gatewayExtension.extType)
+	}
+
+	// Temporary fix to allow this on gateway objects and HTTPRoutes
+	// although HTTPRoute should work...
+	if spec.ProcessingMode != nil {
+		gatewayExtension.extProc.ProcessingMode = toEnvoyProcessingMode(spec.ProcessingMode)
 	}
 
 	return &ExtprocIR{

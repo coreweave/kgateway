@@ -14,6 +14,7 @@ import (
 	localratelimitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	skubeclient "istio.io/istio/pkg/config/schema/kubeclient"
 	"istio.io/istio/pkg/kube/kclient"
@@ -265,6 +266,8 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 				return p
 			}
 
+			envoyGrpcService.Timeout = durationpb.New(30 * time.Second) // Temporary workaround until it can be configured via the spec
+
 			p.extAuth = &envoy_ext_authz_v3.ExtAuthz{
 				Services: &envoy_ext_authz_v3.ExtAuthz_GrpcService{
 					GrpcService: envoyGrpcService,
@@ -298,8 +301,11 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 				return p
 			}
 
+			envoyGrpcService.Timeout = durationpb.New(30 * time.Second) // Temporary workaround until it can be configured
+
 			p.extProc = &envoy_ext_proc_v3.ExternalProcessor{
-				GrpcService: envoyGrpcService,
+				GrpcService:    envoyGrpcService,
+				MessageTimeout: durationpb.New(30 * time.Second), // Temporary workaround until it can be configured
 			}
 		}
 		return p
