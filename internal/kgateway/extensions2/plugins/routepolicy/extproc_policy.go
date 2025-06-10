@@ -34,12 +34,6 @@ func toEnvoyExtProc(
 		return nil, pluginutils.ErrInvalidExtensionType(v1alpha1.GatewayExtensionTypeExtProc, gatewayExtension.extType)
 	}
 
-	// Temporary fix to allow this on gateway objects and HTTPRoutes
-	// although HTTPRoute should work...
-	if spec.ProcessingMode != nil {
-		gatewayExtension.extProc.ProcessingMode = toEnvoyProcessingMode(spec.ProcessingMode)
-	}
-
 	return &ExtprocIR{
 		provider:        gatewayExtension,
 		ExtProcPerRoute: translateExtProcPerFilterConfig(spec),
