@@ -3,6 +3,7 @@ package irtranslator
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -13,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"istio.io/istio/pkg/kube/krt"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -252,8 +254,18 @@ func translateAppProtocol(appProtocol ir.AppProtocol) map[string]*anypb.Any {
 // that will then be augmented by various backend plugins
 func initializeCluster(b *ir.BackendObjectIR) *envoyclusterv3.Cluster {
 	out := &envoyclusterv3.Cluster{
-		Name:                          b.ClusterName(),
-		Metadata:                      new(envoycorev3.Metadata),
+		Name:     b.ClusterName(),
+		Metadata: new(envoycorev3.Metadata),
+		CircuitBreakers: &envoyclusterv3.CircuitBreakers{
+			Thresholds: []*envoyclusterv3.CircuitBreakers_Thresholds{
+				{
+					MaxConnections:     wrapperspb.UInt32(math.MaxUint32),
+					MaxPendingRequests: wrapperspb.UInt32(math.MaxUint32),
+					MaxRequests:        wrapperspb.UInt32(math.MaxUint32),
+					TrackRemaining:     true,
+				},
+			},
+		},
 		ConnectTimeout:                durationpb.New(clusterConnectionTimeout),
 		TypedExtensionProtocolOptions: translateAppProtocol(b.AppProtocol),
 		CommonLbConfig:                createCommonLbConfig(b),
