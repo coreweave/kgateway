@@ -3,6 +3,7 @@ package irtranslator
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"istio.io/istio/pkg/kube/krt"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -171,6 +173,16 @@ func initializeCluster(u ir.BackendObjectIR) *clusterv3.Cluster {
 	out := &clusterv3.Cluster{
 		Name:     u.ClusterName(),
 		Metadata: new(envoy_config_core_v3.Metadata),
+		CircuitBreakers: &clusterv3.CircuitBreakers{
+			Thresholds: []*clusterv3.CircuitBreakers_Thresholds{
+				{
+					MaxConnections:     wrapperspb.UInt32(math.MaxUint32),
+					MaxPendingRequests: wrapperspb.UInt32(math.MaxUint32),
+					MaxRequests:        wrapperspb.UInt32(math.MaxUint32),
+					TrackRemaining:     true,
+				},
+			},
+		},
 		//	CircuitBreakers:  getCircuitBreakers(upstream.GetCircuitBreakers(), circuitBreakers),
 		//	LbSubsetConfig:   createLbConfig(upstream),
 		//	HealthChecks:     hcConfig,
